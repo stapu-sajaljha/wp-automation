@@ -126,7 +126,27 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
       this.qrCode = null;
     });
 
-    this.client.on('ready', () => {
+    this.client.on('ready', async () => {
+      try {
+        // Patch Chat.findImpl to prevent crash when inviting users with restricted group privacy settings
+        if (this.client?.pupPage) {
+          await this.client.pupPage.evaluate(() => {
+            try {
+              const chatColl = window.require('WAWebCollections').Chat;
+              if (chatColl && !chatColl.findImpl) {
+                chatColl.findImpl = async (id: any) => {
+                  return (await window.require('WAWebFindChatAction').findOrCreateLatestChat(id))?.chat;
+                };
+              }
+            } catch (e) {
+              // ignore injection errors
+            }
+          }).catch(() => {});
+        }
+      } catch (patchError) {
+        this.logger.error('Error patching Chat.findImpl', String(patchError));
+      }
+
       try {
         const info = this.client?.info;
         this.phoneNumber = info?.wid?.user || null;
@@ -516,11 +536,13 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
     const participantIds = participants.map(p => (p.includes('@') ? p : `${p}@c.us`));
     const result = await this.client!.createGroup(name, participantIds);
 
-    const groupId = String((result as unknown as GroupCreateResult).gid._serialized);
+    const groupResult = result as unknown as GroupCreateResult;
+    const groupId = String(groupResult.gid._serialized);
     return {
       id: groupId,
       name: name,
       participantsCount: participants.length,
+      participants: groupResult.participants,
     };
   }
 

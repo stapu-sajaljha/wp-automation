@@ -1,0 +1,358 @@
+{
+  "info": {
+    "name": "OpenWA WhatsApp Gateway",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman Collection for OpenWA WhatsApp Gateway API, configured for wa.test.stapubox.com without variables"
+  },
+  "item": [
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "YOUR_API_KEY",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"testing\"\n}"
+            },
+            "url": {
+              "raw": "https://wa.test.stapubox.com/api/sessions",
+              "protocol": "https",
+              "host": [
+                "wa",
+                "test",
+                "stapubox",
+                "com"
+              ],
+              "path": [
+                "api",
+                "sessions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "YOUR_API_KEY",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://wa.test.stapubox.com/api/sessions",
+              "protocol": "https",
+              "host": [
+                "wa",
+                "test",
+                "stapubox",
+                "com"
+              ],
+              "path": [
+                "api",
+                "sessions"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Groups",
+      "item": [
+        {
+          "name": "Create Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "YOUR_API_KEY",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Squad Group Name\",\n  \"participants\": [\n    \"919876543210@c.us\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "https://wa.test.stapubox.com/api/sessions/{session_id}/groups",
+              "protocol": "https",
+              "host": [
+                "wa",
+                "test",
+                "stapubox",
+                "com"
+              ],
+              "path": [
+                "api",
+                "sessions",
+                "{session_id}",
+                "groups"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Joined Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "YOUR_API_KEY",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://wa.test.stapubox.com/api/sessions/{session_id}/groups",
+              "protocol": "https",
+              "host": [
+                "wa",
+                "test",
+                "stapubox",
+                "com"
+              ],
+              "path": [
+                "api",
+                "sessions",
+                "{session_id}",
+                "groups"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Group Invite Link",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "YOUR_API_KEY",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://wa.test.stapubox.com/api/sessions/{session_id}/groups/{group_id}/invite-code",
+              "protocol": "https",
+              "host": [
+                "wa",
+                "test",
+                "stapubox",
+                "com"
+              ],
+              "path": [
+                "api",
+                "sessions",
+                "{session_id}",
+                "groups",
+                "{group_id}",
+                "invite-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Group Description",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "YOUR_API_KEY",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Group description with link: https://app.stapubox.com/squad/123\"\n}"
+            },
+            "url": {
+              "raw": "https://wa.test.stapubox.com/api/sessions/{session_id}/groups/{group_id}/description",
+              "protocol": "https",
+              "host": [
+                "wa",
+                "test",
+                "stapubox",
+                "com"
+              ],
+              "path": [
+                "api",
+                "sessions",
+                "{session_id}",
+                "groups",
+                "{group_id}",
+                "description"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Participants",
+      "item": [
+        {
+          "name": "Add Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "YOUR_API_KEY",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"participants\": [\n    \"919876543210@c.us\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "https://wa.test.stapubox.com/api/sessions/{session_id}/groups/{group_id}/participants",
+              "protocol": "https",
+              "host": [
+                "wa",
+                "test",
+                "stapubox",
+                "com"
+              ],
+              "path": [
+                "api",
+                "sessions",
+                "{session_id}",
+                "groups",
+                "{group_id}",
+                "participants"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Member",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "YOUR_API_KEY",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"participants\": [\n    \"919876543210@c.us\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "https://wa.test.stapubox.com/api/sessions/{session_id}/groups/{group_id}/participants",
+              "protocol": "https",
+              "host": [
+                "wa",
+                "test",
+                "stapubox",
+                "com"
+              ],
+              "path": [
+                "api",
+                "sessions",
+                "{session_id}",
+                "groups",
+                "{group_id}",
+                "participants"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "Send Text Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "YOUR_API_KEY",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chatId\": \"{group_id}\",\n  \"text\": \"Hello everyone! This is a test message from OpenWA.\"\n}"
+            },
+            "url": {
+              "raw": "https://wa.test.stapubox.com/api/sessions/{session_id}/messages/send-text",
+              "protocol": "https",
+              "host": [
+                "wa",
+                "test",
+                "stapubox",
+                "com"
+              ],
+              "path": [
+                "api",
+                "sessions",
+                "{session_id}",
+                "messages",
+                "send-text"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

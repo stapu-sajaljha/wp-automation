@@ -92,4 +92,13 @@ export interface WwjsChannelMessage {
  */
 export interface GroupCreateResult {
   gid: { _serialized: string };
+  participants?: Record<
+    string,
+    {
+      statusCode: number;
+      message: string;
+      isGroupCreator: boolean;
+      isInviteV4Sent: boolean;
+    }
+  >;
 }

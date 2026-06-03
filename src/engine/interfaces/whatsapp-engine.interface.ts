@@ -58,6 +58,15 @@ export interface Group {
   name: string;
   participantsCount?: number;
   isAdmin?: boolean;
+  participants?: Record<
+    string,
+    {
+      statusCode: number;
+      message: string;
+      isGroupCreator: boolean;
+      isInviteV4Sent: boolean;
+    }
+  >;
 }
 
 export interface GroupParticipant {
