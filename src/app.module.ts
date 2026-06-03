@@ -51,7 +51,7 @@ if (process.env.QUEUE_ENABLED === 'true') {
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        type: 'sqlite' as const,
+        type: 'sqlite' as any,
         database: configService.get<string>('database.database', './data/main.sqlite'),
         entities: [__dirname + '/modules/auth/**/*.entity{.ts,.js}', __dirname + '/modules/audit/**/*.entity{.ts,.js}'],
         synchronize: true,
@@ -79,7 +79,7 @@ if (process.env.QUEUE_ENABLED === 'true') {
         if (dbType === 'postgres') {
           return {
             ...baseConfig,
-            type: 'postgres' as const,
+            type: 'postgres' as any,
             host: configService.get<string>('dataDatabase.host'),
             port: configService.get<number>('dataDatabase.port'),
             username: configService.get<string>('dataDatabase.username'),
@@ -101,7 +101,7 @@ if (process.env.QUEUE_ENABLED === 'true') {
         // Users can opt out with DATABASE_SYNCHRONIZE=false to use migrations instead.
         return {
           ...baseConfig,
-          type: 'sqlite' as const,
+          type: 'sqlite' as any,
           database: configService.get<string>('dataDatabase.database', './data/openwa.sqlite'),
           synchronize: configService.get<boolean>('dataDatabase.synchronize', true),
           migrationsRun: !configService.get<boolean>('dataDatabase.synchronize', true),

@@ -8,7 +8,7 @@ const dbType = process.env.DATABASE_TYPE || 'sqlite';
 
 // SQLite configuration
 const sqliteDataSource = new DataSource({
-  type: 'sqlite',
+  type: 'sqlite' as any,
   database: process.env.DATABASE_NAME || './data/openwa.sqlite',
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
@@ -18,7 +18,7 @@ const sqliteDataSource = new DataSource({
 
 // PostgreSQL configuration
 const postgresDataSource = new DataSource({
-  type: 'postgres',
+  type: 'postgres' as any,
   host: process.env.DATABASE_HOST || 'localhost',
   port: parseInt(process.env.DATABASE_PORT || '5432', 10),
   username: process.env.DATABASE_USERNAME,
