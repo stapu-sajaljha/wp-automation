@@ -24,6 +24,12 @@ class CreateGroupDto {
   @IsString()
   @IsOptional()
   picture?: string;
+
+  @ApiPropertyOptional({ description: 'Optional list of participant phone numbers to promote to admin' })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  admins?: string[];
 }
 
 class ParticipantsDto {
@@ -89,6 +95,7 @@ export class GroupController {
     return engine.createGroup(dto.name, dto.participants, {
       description: dto.description,
       picture: dto.picture,
+      admins: dto.admins,
     });
   }
 

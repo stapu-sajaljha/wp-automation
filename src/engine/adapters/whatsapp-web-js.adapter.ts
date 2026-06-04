@@ -533,7 +533,7 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
   async createGroup(
     name: string,
     participants: string[],
-    options?: { description?: string; picture?: string },
+    options?: { description?: string; picture?: string; admins?: string[] },
   ): Promise<Group> {
     this.ensureReady();
     // Ensure participant IDs are in correct format
@@ -578,6 +578,16 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
         await (groupChat as any).setPicture(messageMedia);
       } catch (error) {
         this.logger.warn(`Failed to set profile picture for new group ${groupId}:`, String(error));
+      }
+    }
+
+    // Promote admins if provided
+    if (options?.admins && options.admins.length > 0) {
+      try {
+        const adminIds = options.admins.map(p => (p.includes('@') ? p : `${p}@c.us`));
+        await groupChat.promoteParticipants(adminIds);
+      } catch (error) {
+        this.logger.warn(`Failed to promote admins for new group ${groupId}:`, String(error));
       }
     }
 

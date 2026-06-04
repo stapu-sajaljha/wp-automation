@@ -259,7 +259,7 @@ export interface IWhatsAppEngine {
   createGroup(
     name: string,
     participants: string[],
-    options?: { description?: string; picture?: string },
+    options?: { description?: string; picture?: string; admins?: string[] },
   ): Promise<Group>;
   addParticipants(groupId: string, participants: string[]): Promise<void>;
   removeParticipants(groupId: string, participants: string[]): Promise<void>;
