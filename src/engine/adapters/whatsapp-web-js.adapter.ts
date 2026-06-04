@@ -530,7 +530,11 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
     }
   }
 
-  async createGroup(name: string, participants: string[]): Promise<Group> {
+  async createGroup(
+    name: string,
+    participants: string[],
+    options?: { description?: string; picture?: string },
+  ): Promise<Group> {
     this.ensureReady();
     // Ensure participant IDs are in correct format
     const participantIds = participants.map(p => (p.includes('@') ? p : `${p}@c.us`));
@@ -538,11 +542,63 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
 
     const groupResult = result as unknown as GroupCreateResult;
     const groupId = String(groupResult.gid._serialized);
+
+    const chat = await this.client!.getChatById(groupId);
+    const groupChat = chat as unknown as GroupChat;
+
+    // Set description if provided
+    if (options?.description) {
+      try {
+        await groupChat.setDescription(options.description);
+      } catch (error) {
+        this.logger.warn(`Failed to set description for new group ${groupId}:`, String(error));
+      }
+    }
+
+    // Set profile picture if provided
+    if (options?.picture) {
+      try {
+        let messageMedia: MessageMedia;
+        if (options.picture.startsWith('http://') || options.picture.startsWith('https://')) {
+          messageMedia = await MessageMedia.fromUrl(options.picture);
+        } else {
+          let mimetype = 'image/jpeg';
+          let data = options.picture;
+          let filename = 'group_pic.jpg';
+          
+          const match = options.picture.match(/^data:([^;]+);base64,(.+)$/);
+          if (match) {
+            mimetype = match[1];
+            data = match[2];
+            filename = `group_pic.${mimetype.split('/')[1] || 'jpg'}`;
+          }
+          
+          messageMedia = new MessageMedia(mimetype, data, filename);
+        }
+        await (groupChat as any).setPicture(messageMedia);
+      } catch (error) {
+        this.logger.warn(`Failed to set profile picture for new group ${groupId}:`, String(error));
+      }
+    }
+
+    let groupUrl: string | undefined = undefined;
+    try {
+      if (chat.isGroup) {
+        const inviteCode = await groupChat.getInviteCode();
+        if (inviteCode) {
+          groupUrl = `https://chat.whatsapp.com/${inviteCode}`;
+        }
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to get invite code for new group ${groupId}:`, String(error));
+    }
+
     return {
       id: groupId,
       name: name,
       participantsCount: participants.length,
       participants: groupResult.participants,
+      groupUrl,
     };
   }
 
@@ -611,6 +667,33 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
       throw new Error('Chat is not a group');
     }
     await (chat as unknown as GroupChat).setDescription(description);
+  }
+
+  async setGroupPicture(groupId: string, picture: string): Promise<void> {
+    this.ensureReady();
+    const chat = await this.client!.getChatById(groupId);
+    if (!chat.isGroup) {
+      throw new Error('Chat is not a group');
+    }
+
+    let messageMedia: MessageMedia;
+    if (picture.startsWith('http://') || picture.startsWith('https://')) {
+      messageMedia = await MessageMedia.fromUrl(picture);
+    } else {
+      let mimetype = 'image/jpeg';
+      let data = picture;
+      let filename = 'group_pic.jpg';
+      
+      const match = picture.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        mimetype = match[1];
+        data = match[2];
+        filename = `group_pic.${mimetype.split('/')[1] || 'jpg'}`;
+      }
+      
+      messageMedia = new MessageMedia(mimetype, data, filename);
+    }
+    await (chat as any).setPicture(messageMedia);
   }
 
   // Reactions (Phase 3)

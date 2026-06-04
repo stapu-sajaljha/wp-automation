@@ -1,17 +1,29 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
-import { IsString, IsArray, IsNotEmpty } from 'class-validator';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsArray, IsNotEmpty, IsOptional } from 'class-validator';
 import { SessionService } from '../session/session.service';
 
 // DTOs
 class CreateGroupDto {
+  @ApiProperty({ description: 'The name/subject of the group' })
   @IsString()
   @IsNotEmpty()
   name: string;
 
+  @ApiProperty({ description: 'List of participant phone numbers or chat IDs' })
   @IsArray()
   @IsString({ each: true })
   participants: string[];
+
+  @ApiPropertyOptional({ description: 'Optional group description' })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiPropertyOptional({ description: 'Optional group profile picture URL or base64 data uri' })
+  @IsString()
+  @IsOptional()
+  picture?: string;
 }
 
 class ParticipantsDto {
@@ -29,6 +41,13 @@ class GroupSubjectDto {
 class GroupDescriptionDto {
   @IsString()
   description: string;
+}
+
+class GroupPictureDto {
+  @ApiProperty({ description: 'Group profile picture URL or base64 data uri' })
+  @IsString()
+  @IsNotEmpty()
+  picture: string;
 }
 
 @ApiTags('groups')
@@ -67,7 +86,10 @@ export class GroupController {
   @ApiResponse({ status: 201, description: 'Group created' })
   async create(@Param('sessionId') sessionId: string, @Body() dto: CreateGroupDto) {
     const engine = this.getEngine(sessionId);
-    return engine.createGroup(dto.name, dto.participants);
+    return engine.createGroup(dto.name, dto.participants, {
+      description: dto.description,
+      picture: dto.picture,
+    });
   }
 
   @Post(':groupId/participants')
@@ -167,6 +189,22 @@ export class GroupController {
     const engine = this.getEngine(sessionId);
     await engine.setGroupDescription(groupId, dto.description);
     return { success: true, message: 'Group description updated' };
+  }
+
+  @Put(':groupId/picture')
+  @ApiOperation({ summary: 'Change group profile picture' })
+  @ApiParam({ name: 'sessionId', description: 'Session ID' })
+  @ApiParam({ name: 'groupId', description: 'Group ID' })
+  @ApiBody({ type: GroupPictureDto })
+  @ApiResponse({ status: 200, description: 'Profile picture updated' })
+  async setPicture(
+    @Param('sessionId') sessionId: string,
+    @Param('groupId') groupId: string,
+    @Body() dto: GroupPictureDto,
+  ) {
+    const engine = this.getEngine(sessionId);
+    await engine.setGroupPicture(groupId, dto.picture);
+    return { success: true, message: 'Group profile picture updated' };
   }
 
   @Post(':groupId/leave')

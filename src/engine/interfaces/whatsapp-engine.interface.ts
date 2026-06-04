@@ -58,6 +58,7 @@ export interface Group {
   name: string;
   participantsCount?: number;
   isAdmin?: boolean;
+  groupUrl?: string;
   participants?: Record<
     string,
     {
@@ -255,7 +256,11 @@ export interface IWhatsAppEngine {
 
   // Groups - Extended (Phase 3)
   getGroupInfo(groupId: string): Promise<GroupInfo | null>;
-  createGroup(name: string, participants: string[]): Promise<Group>;
+  createGroup(
+    name: string,
+    participants: string[],
+    options?: { description?: string; picture?: string },
+  ): Promise<Group>;
   addParticipants(groupId: string, participants: string[]): Promise<void>;
   removeParticipants(groupId: string, participants: string[]): Promise<void>;
   promoteParticipants(groupId: string, participants: string[]): Promise<void>;
@@ -263,6 +268,7 @@ export interface IWhatsAppEngine {
   leaveGroup(groupId: string): Promise<void>;
   setGroupSubject(groupId: string, subject: string): Promise<void>;
   setGroupDescription(groupId: string, description: string): Promise<void>;
+  setGroupPicture(groupId: string, picture: string): Promise<void>;
   getGroupInviteCode(groupId: string): Promise<string>;
   revokeGroupInviteCode(groupId: string): Promise<string>;
 

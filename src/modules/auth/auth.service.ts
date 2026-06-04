@@ -158,7 +158,8 @@ export class AuthService implements OnModuleInit {
   }
 
   async validateApiKey(rawKey: string, clientIp?: string, sessionId?: string): Promise<ApiKey> {
-    const keyHash = this.hashKey(rawKey);
+    const trimmedKey = (rawKey || '').trim();
+    const keyHash = this.hashKey(trimmedKey);
     const apiKey = await this.apiKeyRepository.findOne({ where: { keyHash } });
 
     if (!apiKey) {
