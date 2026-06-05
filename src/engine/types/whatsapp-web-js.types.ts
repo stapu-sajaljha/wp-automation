@@ -31,6 +31,9 @@ export interface GroupChat extends Omit<Chat, 'isReadOnly' | 'getLabels'> {
   removeLabel(id: string): Promise<void>;
   getInviteCode(): Promise<string>;
   revokeInvite(): Promise<string>;
+  setMessagesAdminsOnly(adminsOnly: boolean): Promise<boolean>;
+  setInfoAdminsOnly(adminsOnly: boolean): Promise<boolean>;
+  setAddMembersAdminsOnly(adminsOnly: boolean): Promise<boolean>;
 }
 
 /**

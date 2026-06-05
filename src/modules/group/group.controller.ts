@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsArray, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsArray, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
 import { SessionService } from '../session/session.service';
 
 // DTOs
@@ -30,6 +30,21 @@ class CreateGroupDto {
   @IsString({ each: true })
   @IsOptional()
   admins?: string[];
+
+  @ApiPropertyOptional({ description: 'If true, only admins can send messages' })
+  @IsBoolean()
+  @IsOptional()
+  adminsOnlyMessage?: boolean;
+
+  @ApiPropertyOptional({ description: 'If true, only admins can edit group info' })
+  @IsBoolean()
+  @IsOptional()
+  adminsOnlyInfo?: boolean;
+
+  @ApiPropertyOptional({ description: 'If true, only admins can add new members' })
+  @IsBoolean()
+  @IsOptional()
+  adminsOnlyAddMembers?: boolean;
 }
 
 class ParticipantsDto {
@@ -54,6 +69,23 @@ class GroupPictureDto {
   @IsString()
   @IsNotEmpty()
   picture: string;
+}
+
+class GroupPermissionsDto {
+  @ApiPropertyOptional({ description: 'If true, only admins can send messages' })
+  @IsBoolean()
+  @IsOptional()
+  adminsOnlyMessage?: boolean;
+
+  @ApiPropertyOptional({ description: 'If true, only admins can edit group info' })
+  @IsBoolean()
+  @IsOptional()
+  adminsOnlyInfo?: boolean;
+
+  @ApiPropertyOptional({ description: 'If true, only admins can add new members' })
+  @IsBoolean()
+  @IsOptional()
+  adminsOnlyAddMembers?: boolean;
 }
 
 @ApiTags('groups')
@@ -96,6 +128,9 @@ export class GroupController {
       description: dto.description,
       picture: dto.picture,
       admins: dto.admins,
+      adminsOnlyMessage: dto.adminsOnlyMessage,
+      adminsOnlyInfo: dto.adminsOnlyInfo,
+      adminsOnlyAddMembers: dto.adminsOnlyAddMembers,
     });
   }
 
@@ -212,6 +247,22 @@ export class GroupController {
     const engine = this.getEngine(sessionId);
     await engine.setGroupPicture(groupId, dto.picture);
     return { success: true, message: 'Group profile picture updated' };
+  }
+
+  @Put(':groupId/permissions')
+  @ApiOperation({ summary: 'Update group permissions' })
+  @ApiParam({ name: 'sessionId', description: 'Session ID' })
+  @ApiParam({ name: 'groupId', description: 'Group ID' })
+  @ApiBody({ type: GroupPermissionsDto })
+  @ApiResponse({ status: 200, description: 'Group permissions updated' })
+  async setPermissions(
+    @Param('sessionId') sessionId: string,
+    @Param('groupId') groupId: string,
+    @Body() dto: GroupPermissionsDto,
+  ) {
+    const engine = this.getEngine(sessionId);
+    await engine.setGroupPermissions(groupId, dto);
+    return { success: true, message: 'Group permissions updated' };
   }
 
   @Post(':groupId/leave')

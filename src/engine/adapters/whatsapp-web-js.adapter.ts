@@ -533,7 +533,14 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
   async createGroup(
     name: string,
     participants: string[],
-    options?: { description?: string; picture?: string; admins?: string[] },
+    options?: {
+      description?: string;
+      picture?: string;
+      admins?: string[];
+      adminsOnlyMessage?: boolean;
+      adminsOnlyInfo?: boolean;
+      adminsOnlyAddMembers?: boolean;
+    },
   ): Promise<Group> {
     this.ensureReady();
     // Ensure participant IDs are in correct format
@@ -588,6 +595,31 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
         await groupChat.promoteParticipants(adminIds);
       } catch (error) {
         this.logger.warn(`Failed to promote admins for new group ${groupId}:`, String(error));
+      }
+    }
+
+    // Set permissions if provided
+    if (options?.adminsOnlyMessage !== undefined) {
+      try {
+        await groupChat.setMessagesAdminsOnly(options.adminsOnlyMessage);
+      } catch (error) {
+        this.logger.warn(`Failed to set adminsOnlyMessage for new group ${groupId}:`, String(error));
+      }
+    }
+
+    if (options?.adminsOnlyInfo !== undefined) {
+      try {
+        await groupChat.setInfoAdminsOnly(options.adminsOnlyInfo);
+      } catch (error) {
+        this.logger.warn(`Failed to set adminsOnlyInfo for new group ${groupId}:`, String(error));
+      }
+    }
+
+    if (options?.adminsOnlyAddMembers !== undefined) {
+      try {
+        await groupChat.setAddMembersAdminsOnly(options.adminsOnlyAddMembers);
+      } catch (error) {
+        this.logger.warn(`Failed to set adminsOnlyAddMembers for new group ${groupId}:`, String(error));
       }
     }
 
@@ -704,6 +736,32 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
       messageMedia = new MessageMedia(mimetype, data, filename);
     }
     await (chat as any).setPicture(messageMedia);
+  }
+
+  async setGroupPermissions(
+    groupId: string,
+    permissions: {
+      adminsOnlyMessage?: boolean;
+      adminsOnlyInfo?: boolean;
+      adminsOnlyAddMembers?: boolean;
+    },
+  ): Promise<void> {
+    this.ensureReady();
+    const chat = await this.client!.getChatById(groupId);
+    if (!chat.isGroup) {
+      throw new Error('Chat is not a group');
+    }
+    const groupChat = chat as unknown as GroupChat;
+
+    if (permissions.adminsOnlyMessage !== undefined) {
+      await groupChat.setMessagesAdminsOnly(permissions.adminsOnlyMessage);
+    }
+    if (permissions.adminsOnlyInfo !== undefined) {
+      await groupChat.setInfoAdminsOnly(permissions.adminsOnlyInfo);
+    }
+    if (permissions.adminsOnlyAddMembers !== undefined) {
+      await groupChat.setAddMembersAdminsOnly(permissions.adminsOnlyAddMembers);
+    }
   }
 
   // Reactions (Phase 3)

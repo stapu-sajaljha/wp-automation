@@ -259,7 +259,14 @@ export interface IWhatsAppEngine {
   createGroup(
     name: string,
     participants: string[],
-    options?: { description?: string; picture?: string; admins?: string[] },
+    options?: {
+      description?: string;
+      picture?: string;
+      admins?: string[];
+      adminsOnlyMessage?: boolean;
+      adminsOnlyInfo?: boolean;
+      adminsOnlyAddMembers?: boolean;
+    },
   ): Promise<Group>;
   addParticipants(groupId: string, participants: string[]): Promise<void>;
   removeParticipants(groupId: string, participants: string[]): Promise<void>;
@@ -268,6 +275,14 @@ export interface IWhatsAppEngine {
   leaveGroup(groupId: string): Promise<void>;
   setGroupSubject(groupId: string, subject: string): Promise<void>;
   setGroupDescription(groupId: string, description: string): Promise<void>;
+  setGroupPermissions(
+    groupId: string,
+    permissions: {
+      adminsOnlyMessage?: boolean;
+      adminsOnlyInfo?: boolean;
+      adminsOnlyAddMembers?: boolean;
+    },
+  ): Promise<void>;
   setGroupPicture(groupId: string, picture: string): Promise<void>;
   getGroupInviteCode(groupId: string): Promise<string>;
   revokeGroupInviteCode(groupId: string): Promise<string>;
