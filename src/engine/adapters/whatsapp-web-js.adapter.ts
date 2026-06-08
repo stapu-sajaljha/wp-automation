@@ -547,8 +547,37 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
     const participantIds = participants.map(p => (p.includes('@') ? p : `${p}@c.us`));
     const result = await this.client!.createGroup(name, participantIds);
 
-    const groupResult = result as unknown as GroupCreateResult;
-    const groupId = String(groupResult.gid._serialized);
+    if (!result) {
+      throw new Error('Failed to create group: received empty response from WhatsApp client');
+    }
+
+    let groupId: string | undefined = undefined;
+
+    if (typeof result === 'string') {
+      groupId = result;
+    } else {
+      const anyResult = result as any;
+      if (anyResult.gid) {
+        if (typeof anyResult.gid === 'string') {
+          groupId = anyResult.gid;
+        } else if (anyResult.gid._serialized) {
+          groupId = anyResult.gid._serialized;
+        }
+      }
+
+      if (!groupId && anyResult.id) {
+        if (typeof anyResult.id === 'string') {
+          groupId = anyResult.id;
+        } else if (anyResult.id._serialized) {
+          groupId = anyResult.id._serialized;
+        }
+      }
+    }
+
+    if (!groupId) {
+      this.logger.error(`Failed to extract group ID from result: ${JSON.stringify(result)}`);
+      throw new Error('Failed to create group: Could not retrieve group ID from WhatsApp client response.');
+    }
 
     const chat = await this.client!.getChatById(groupId);
     const groupChat = chat as unknown as GroupChat;
@@ -635,11 +664,13 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
       this.logger.warn(`Failed to get invite code for new group ${groupId}:`, String(error));
     }
 
+    const groupResult = typeof result === 'object' && result !== null ? (result as any) : undefined;
+
     return {
       id: groupId,
       name: name,
       participantsCount: participants.length,
-      participants: groupResult.participants,
+      participants: groupResult?.participants,
       groupUrl,
     };
   }
