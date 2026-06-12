@@ -579,89 +579,105 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
       throw new Error('Failed to create group: Could not retrieve group ID from WhatsApp client response.');
     }
 
-    const chat = await this.client!.getChatById(groupId);
-    const groupChat = chat as unknown as GroupChat;
-
-    // Set description if provided
-    if (options?.description) {
+    let chat: any = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        await groupChat.setDescription(options.description);
+        chat = await this.client!.getChatById(groupId);
+        break;
       } catch (error) {
-        this.logger.warn(`Failed to set description for new group ${groupId}:`, String(error));
-      }
-    }
-
-    // Set profile picture if provided
-    if (options?.picture) {
-      try {
-        let messageMedia: MessageMedia;
-        if (options.picture.startsWith('http://') || options.picture.startsWith('https://')) {
-          messageMedia = await MessageMedia.fromUrl(options.picture);
+        if (attempt === 3) {
+          this.logger.warn(`Failed to resolve chat object for new group ${groupId} after 3 attempts: ${String(error)}. Continuing with fallback.`);
         } else {
-          let mimetype = 'image/jpeg';
-          let data = options.picture;
-          let filename = 'group_pic.jpg';
-          
-          const match = options.picture.match(/^data:([^;]+);base64,(.+)$/);
-          if (match) {
-            mimetype = match[1];
-            data = match[2];
-            filename = `group_pic.${mimetype.split('/')[1] || 'jpg'}`;
-          }
-          
-          messageMedia = new MessageMedia(mimetype, data, filename);
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
-        await (groupChat as any).setPicture(messageMedia);
-      } catch (error) {
-        this.logger.warn(`Failed to set profile picture for new group ${groupId}:`, String(error));
-      }
-    }
-
-    // Promote admins if provided
-    if (options?.admins && options.admins.length > 0) {
-      try {
-        const adminIds = options.admins.map(p => (p.includes('@') ? p : `${p}@c.us`));
-        await groupChat.promoteParticipants(adminIds);
-      } catch (error) {
-        this.logger.warn(`Failed to promote admins for new group ${groupId}:`, String(error));
-      }
-    }
-
-    // Set permissions if provided
-    if (options?.adminsOnlyMessage !== undefined) {
-      try {
-        await groupChat.setMessagesAdminsOnly(options.adminsOnlyMessage);
-      } catch (error) {
-        this.logger.warn(`Failed to set adminsOnlyMessage for new group ${groupId}:`, String(error));
-      }
-    }
-
-    if (options?.adminsOnlyInfo !== undefined) {
-      try {
-        await groupChat.setInfoAdminsOnly(options.adminsOnlyInfo);
-      } catch (error) {
-        this.logger.warn(`Failed to set adminsOnlyInfo for new group ${groupId}:`, String(error));
-      }
-    }
-
-    if (options?.adminsOnlyAddMembers !== undefined) {
-      try {
-        await groupChat.setAddMembersAdminsOnly(options.adminsOnlyAddMembers);
-      } catch (error) {
-        this.logger.warn(`Failed to set adminsOnlyAddMembers for new group ${groupId}:`, String(error));
       }
     }
 
     let groupUrl: string | undefined = undefined;
-    try {
-      if (chat.isGroup) {
-        const inviteCode = await groupChat.getInviteCode();
-        if (inviteCode) {
-          groupUrl = `https://chat.whatsapp.com/${inviteCode}`;
+
+    if (chat) {
+      const groupChat = chat as unknown as GroupChat;
+
+      // Set description if provided
+      if (options?.description) {
+        try {
+          await groupChat.setDescription(options.description);
+        } catch (error) {
+          this.logger.warn(`Failed to set description for new group ${groupId}:`, String(error));
         }
       }
-    } catch (error) {
-      this.logger.warn(`Failed to get invite code for new group ${groupId}:`, String(error));
+
+      // Set profile picture if provided
+      if (options?.picture) {
+        try {
+          let messageMedia: MessageMedia;
+          if (options.picture.startsWith('http://') || options.picture.startsWith('https://')) {
+            messageMedia = await MessageMedia.fromUrl(options.picture);
+          } else {
+            let mimetype = 'image/jpeg';
+            let data = options.picture;
+            let filename = 'group_pic.jpg';
+            
+            const match = options.picture.match(/^data:([^;]+);base64,(.+)$/);
+            if (match) {
+              mimetype = match[1];
+              data = match[2];
+              filename = `group_pic.${mimetype.split('/')[1] || 'jpg'}`;
+            }
+            
+            messageMedia = new MessageMedia(mimetype, data, filename);
+          }
+          await (groupChat as any).setPicture(messageMedia);
+        } catch (error) {
+          this.logger.warn(`Failed to set profile picture for new group ${groupId}:`, String(error));
+        }
+      }
+
+      // Promote admins if provided
+      if (options?.admins && options.admins.length > 0) {
+        try {
+          const adminIds = options.admins.map(p => (p.includes('@') ? p : `${p}@c.us`));
+          await groupChat.promoteParticipants(adminIds);
+        } catch (error) {
+          this.logger.warn(`Failed to promote admins for new group ${groupId}:`, String(error));
+        }
+      }
+
+      // Set permissions if provided
+      if (options?.adminsOnlyMessage !== undefined) {
+        try {
+          await groupChat.setMessagesAdminsOnly(options.adminsOnlyMessage);
+        } catch (error) {
+          this.logger.warn(`Failed to set adminsOnlyMessage for new group ${groupId}:`, String(error));
+        }
+      }
+
+      if (options?.adminsOnlyInfo !== undefined) {
+        try {
+          await groupChat.setInfoAdminsOnly(options.adminsOnlyInfo);
+        } catch (error) {
+          this.logger.warn(`Failed to set adminsOnlyInfo for new group ${groupId}:`, String(error));
+        }
+      }
+
+      if (options?.adminsOnlyAddMembers !== undefined) {
+        try {
+          await groupChat.setAddMembersAdminsOnly(options.adminsOnlyAddMembers);
+        } catch (error) {
+          this.logger.warn(`Failed to set adminsOnlyAddMembers for new group ${groupId}:`, String(error));
+        }
+      }
+
+      try {
+        if (chat.isGroup) {
+          const inviteCode = await groupChat.getInviteCode();
+          if (inviteCode) {
+            groupUrl = `https://chat.whatsapp.com/${inviteCode}`;
+          }
+        }
+      } catch (error) {
+        this.logger.warn(`Failed to get invite code for new group ${groupId}:`, String(error));
+      }
     }
 
     const groupResult = typeof result === 'object' && result !== null ? (result as any) : undefined;
