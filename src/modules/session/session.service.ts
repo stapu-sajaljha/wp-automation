@@ -35,6 +35,9 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
   // Reconnection state per session
   private reconnectStates: Map<string, ReconnectState> = new Map();
 
+  // In-memory cache for fetched proxies
+  private proxyPoolCache: string[] = [];
+
   constructor(
     @InjectRepository(Session, 'data')
     private readonly sessionRepository: Repository<Session>,
@@ -92,6 +95,49 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
     this.reconnectStates.clear();
   }
 
+  private async getProxyPool(): Promise<string[]> {
+    if (this.proxyPoolCache.length > 0) {
+      return this.proxyPoolCache;
+    }
+
+    const proxyPoolUrl = this.configService.get<string>('engine.proxyPoolUrl') || process.env.PROXY_POOL_URL;
+    if (proxyPoolUrl) {
+      try {
+        const response = await fetch(proxyPoolUrl);
+        if (response.ok) {
+          const text = await response.text();
+          const parsed: string[] = [];
+          const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+          for (const line of lines) {
+            // Format: host:port:username:password
+            const parts = line.split(':');
+            if (parts.length === 4) {
+              const [host, port, username, password] = parts;
+              parsed.push(`http://${username}:${password}@${host}:${port}`);
+            } else if (parts.length === 2) {
+              const [host, port] = parts;
+              parsed.push(`http://${host}:${port}`);
+            }
+          }
+          if (parsed.length > 0) {
+            this.logger.log(`Successfully fetched and parsed ${parsed.length} proxies from URL`);
+            this.proxyPoolCache = parsed;
+            return parsed;
+          }
+        }
+      } catch (error) {
+        this.logger.error('Failed to fetch proxy pool from URL', String(error));
+      }
+    }
+
+    const proxyPoolStr = this.configService.get<string>('engine.proxyPool') || process.env.PROXY_POOL;
+    if (proxyPoolStr) {
+      return proxyPoolStr.split(',').map(p => p.trim()).filter(Boolean);
+    }
+
+    return [];
+  }
+
   async create(dto: CreateSessionDto): Promise<Session> {
     // Check if session with same name exists
     const existing = await this.sessionRepository.findOne({
@@ -106,26 +152,22 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
     let proxyType = dto.proxyType || null;
 
     if (!proxyUrl) {
-      const proxyPoolStr = this.configService.get<string>('engine.proxyPool') || process.env.PROXY_POOL;
-      if (proxyPoolStr) {
-        const proxyPool = proxyPoolStr.split(',').map(p => p.trim()).filter(Boolean);
-        if (proxyPool.length > 0) {
-          const totalSessions = await this.sessionRepository.count();
-          const selectedProxy = proxyPool[totalSessions % proxyPool.length];
-          
-          // Clean/normalize selected proxy url to ensure it matches format expected by Puppeteer
-          proxyUrl = selectedProxy;
+      const proxyPool = await this.getProxyPool();
+      if (proxyPool.length > 0) {
+        const totalSessions = await this.sessionRepository.count();
+        const selectedProxy = proxyPool[totalSessions % proxyPool.length];
+        
+        proxyUrl = selectedProxy;
 
-          // Infer proxy type from prefix
-          if (proxyUrl.startsWith('socks5://')) {
-            proxyType = 'socks5';
-          } else if (proxyUrl.startsWith('socks4://')) {
-            proxyType = 'socks4';
-          } else if (proxyUrl.startsWith('https://')) {
-            proxyType = 'https';
-          } else {
-            proxyType = 'http';
-          }
+        // Infer proxy type from prefix
+        if (proxyUrl.startsWith('socks5://')) {
+          proxyType = 'socks5';
+        } else if (proxyUrl.startsWith('socks4://')) {
+          proxyType = 'socks4';
+        } else if (proxyUrl.startsWith('https://')) {
+          proxyType = 'https';
+        } else {
+          proxyType = 'http';
         }
       }
     }

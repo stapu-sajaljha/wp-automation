@@ -56,6 +56,7 @@ export default () => ({
     defaultProxyUrl: process.env.DEFAULT_PROXY_URL || undefined,
     defaultProxyType: (process.env.DEFAULT_PROXY_TYPE || 'http') as 'http' | 'https' | 'socks4' | 'socks5',
     proxyPool: process.env.PROXY_POOL || undefined,
+    proxyPoolUrl: process.env.PROXY_POOL_URL || undefined,
   },
 
   // Webhook configuration
