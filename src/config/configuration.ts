@@ -53,6 +53,8 @@ export default () => ({
       args: (process.env.PUPPETEER_ARGS || '--no-sandbox,--disable-setuid-sandbox').split(','),
     },
     sessionDataPath: process.env.SESSION_DATA_PATH || './data/sessions',
+    defaultProxyUrl: process.env.DEFAULT_PROXY_URL || undefined,
+    defaultProxyType: (process.env.DEFAULT_PROXY_TYPE || 'http') as 'http' | 'https' | 'socks4' | 'socks5',
   },
 
   // Webhook configuration

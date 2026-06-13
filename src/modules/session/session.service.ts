@@ -16,6 +16,7 @@ import { createLogger } from '../../common/services/logger.service';
 import { EventsGateway } from '../events/events.gateway';
 import { WebhookService } from '../webhook/webhook.service';
 import { HookManager } from '../../core/hooks';
+import { ConfigService } from '@nestjs/config';
 
 interface ReconnectState {
   attempts: number;
@@ -43,6 +44,7 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
     private readonly eventsGateway: EventsGateway,
     private readonly webhookService: WebhookService,
     private readonly hookManager: HookManager,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -218,16 +220,21 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
   }
 
   private async initializeEngine(id: string, session: Session): Promise<void> {
+    const defaultProxyUrl = this.configService.get<string>('engine.defaultProxyUrl');
+    const defaultProxyType = this.configService.get<'http' | 'https' | 'socks4' | 'socks5'>('engine.defaultProxyType');
+    const proxyUrl = session.proxyUrl || defaultProxyUrl || undefined;
+    const proxyType = session.proxyType || defaultProxyType || undefined;
+
     this.logger.log(`Initializing engine for session: ${session.name}`, {
       sessionId: id,
       action: 'engine_init',
-      proxyEnabled: !!session.proxyUrl,
+      proxyEnabled: !!proxyUrl,
     });
 
     const engine = this.engineFactory.create({
       sessionId: session.name,
-      proxyUrl: session.proxyUrl || undefined,
-      proxyType: session.proxyType || undefined,
+      proxyUrl,
+      proxyType,
     });
     this.engines.set(id, engine);
 
