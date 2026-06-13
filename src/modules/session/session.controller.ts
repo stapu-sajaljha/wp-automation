@@ -28,6 +28,8 @@ export class SessionController {
       lastActive: session.lastActiveAt,
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,
+      proxyUrl: session.proxyUrl,
+      proxyType: session.proxyType,
     };
   }
 

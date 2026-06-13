@@ -28,6 +28,12 @@ export class SessionResponseDto {
 
   @ApiProperty({ example: '2025-02-02T10:00:00Z' })
   updatedAt: Date;
+
+  @ApiPropertyOptional({ example: 'http://zzggcslc:pxyvnn6mqroy@proxy.webshare.io:80' })
+  proxyUrl?: string | null;
+
+  @ApiPropertyOptional({ example: 'http', enum: ['http', 'https', 'socks4', 'socks5'] })
+  proxyType?: 'http' | 'https' | 'socks4' | 'socks5' | null;
 }
 
 export class QRCodeResponseDto {
