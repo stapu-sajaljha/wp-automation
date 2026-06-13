@@ -90,13 +90,14 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
         try {
           // Check if urlStr is a complete URL (contains protocol)
           const parsedUrl = new URL(urlStr.includes('://') ? urlStr : `${this.config.proxy.type || 'http'}://${urlStr}`);
+          const port = parsedUrl.port || (parsedUrl.protocol === 'https:' ? '443' : '80');
           
           if (parsedUrl.username && parsedUrl.password) {
             this.proxyUsername = decodeURIComponent(parsedUrl.username);
             this.proxyPassword = decodeURIComponent(parsedUrl.password);
-            proxyServerUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
+            proxyServerUrl = `${parsedUrl.protocol}//${parsedUrl.hostname}:${port}`;
           } else {
-            proxyServerUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
+            proxyServerUrl = `${parsedUrl.protocol}//${parsedUrl.hostname}:${port}`;
           }
         } catch (error) {
           // Fallback if URL parsing fails
@@ -117,6 +118,7 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
         puppeteer: {
           headless: this.config.puppeteer?.headless ?? true,
           args: puppeteerArgs,
+          protocolTimeout: 120000,
         },
       });
 
@@ -131,8 +133,16 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
   private setupEventHandlers(): void {
     if (!this.client) return;
 
-    if (this.proxyUsername && this.proxyPassword) {
-      this.client.on('puppeteer_page', async (page) => {
+    this.client.on('puppeteer_page', async (page) => {
+      try {
+        this.logger.log('Setting default page timeouts to 120s...');
+        page.setDefaultNavigationTimeout(120000);
+        page.setDefaultTimeout(120000);
+      } catch (error) {
+        this.logger.error('Failed to set page timeouts', String(error));
+      }
+
+      if (this.proxyUsername && this.proxyPassword) {
         try {
           this.logger.log('Authenticating Puppeteer page for proxy access...');
           await page.authenticate({
@@ -142,8 +152,8 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
         } catch (error) {
           this.logger.error('Failed to authenticate page for proxy', String(error));
         }
-      });
-    }
+      }
+    });
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     this.client.on('qr', async (qr: string) => {
