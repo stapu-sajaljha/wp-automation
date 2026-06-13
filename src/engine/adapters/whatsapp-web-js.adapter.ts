@@ -57,6 +57,8 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
   private phoneNumber: string | null = null;
   private pushName: string | null = null;
   private callbacks: EngineEventCallbacks = {};
+  private proxyUsername = '';
+  private proxyPassword = '';
 
   constructor(private readonly config: WhatsAppWebJsConfig) {
     super();
@@ -82,9 +84,28 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
 
       // Add proxy configuration if provided
       if (this.config.proxy) {
-        puppeteerArgs.push(`--proxy-server=${this.config.proxy.url}`);
+        const urlStr = this.config.proxy.url;
+        let proxyServerUrl = urlStr;
+
+        try {
+          // Check if urlStr is a complete URL (contains protocol)
+          const parsedUrl = new URL(urlStr.includes('://') ? urlStr : `${this.config.proxy.type || 'http'}://${urlStr}`);
+          
+          if (parsedUrl.username && parsedUrl.password) {
+            this.proxyUsername = decodeURIComponent(parsedUrl.username);
+            this.proxyPassword = decodeURIComponent(parsedUrl.password);
+            proxyServerUrl = `${parsedUrl.hostname}:${parsedUrl.port}`;
+          } else {
+            proxyServerUrl = `${parsedUrl.hostname}:${parsedUrl.port}`;
+          }
+        } catch (error) {
+          // Fallback if URL parsing fails
+          proxyServerUrl = urlStr;
+        }
+
+        puppeteerArgs.push(`--proxy-server=${proxyServerUrl}`);
         this.logger.log(
-          `Using proxy: ${this.config.proxy.type}://${this.config.proxy.url.replace(/:[^:@]*@/, ':***@')}`,
+          `Using proxy: ${this.config.proxy.type}://${proxyServerUrl}` + (this.proxyUsername ? ' with credentials' : ''),
         );
       }
 
@@ -109,6 +130,20 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
 
   private setupEventHandlers(): void {
     if (!this.client) return;
+
+    if (this.proxyUsername && this.proxyPassword) {
+      this.client.on('puppeteer_page', async (page) => {
+        try {
+          this.logger.log('Authenticating Puppeteer page for proxy access...');
+          await page.authenticate({
+            username: this.proxyUsername,
+            password: this.proxyPassword,
+          });
+        } catch (error) {
+          this.logger.error('Failed to authenticate page for proxy', String(error));
+        }
+      });
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     this.client.on('qr', async (qr: string) => {
