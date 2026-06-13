@@ -112,10 +112,16 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
             // Format: host:port:username:password
             const parts = line.split(':');
             if (parts.length === 4) {
-              const [host, port, username, password] = parts;
+              let [host, port, username, password] = parts;
+              if (host === 'p.webshare.io') {
+                host = 'proxy.webshare.io';
+              }
               parsed.push(`http://${username}:${password}@${host}:${port}`);
             } else if (parts.length === 2) {
-              const [host, port] = parts;
+              let [host, port] = parts;
+              if (host === 'p.webshare.io') {
+                host = 'proxy.webshare.io';
+              }
               parsed.push(`http://${host}:${port}`);
             }
           }
