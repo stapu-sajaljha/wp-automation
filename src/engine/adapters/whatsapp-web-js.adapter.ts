@@ -594,7 +594,68 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
       const clean = p.replace(/[+\s\-()]/g, '');
       return `${clean}@c.us`;
     });
-    const result = await this.client!.createGroup(name, participantIds);
+    let result: string;
+    try {
+      result = await this.client!.pupPage!.evaluate(async (title, participants) => {
+        const participantWids = [];
+        const failedParticipants = [];
+
+        for (const participant of participants) {
+          try {
+            const pWid = window.require('WAWebWidFactory').createWid(participant);
+            const exists = await window.require('WAWebQueryExistsJob').queryWidExists(pWid);
+            if (exists && exists.wid) {
+              participantWids.push({ phoneNumber: pWid });
+            } else {
+              failedParticipants.push(participant);
+            }
+          } catch (e) {
+            failedParticipants.push(participant);
+          }
+        }
+
+        if (participantWids.length === 0) {
+          throw new Error('None of the participants exist on WhatsApp: ' + failedParticipants.join(', '));
+        }
+
+        // Try standard creation first (without addressingModeOverride 'lid' which often fails)
+        try {
+          const createGroupResult = await window.require('WAWebGroupCreateJob').createGroup(
+            {
+              memberAddMode: false,
+              membershipApprovalMode: false,
+              announce: false,
+              restrict: false,
+              ephemeralDuration: 0,
+              title: title,
+            },
+            participantWids,
+          );
+          return createGroupResult.wid._serialized || createGroupResult.wid;
+        } catch (err) {
+          // Fallback to creation with addressingModeOverride 'lid'
+          try {
+            const createGroupResult = await window.require('WAWebGroupCreateJob').createGroup(
+              {
+                addressingModeOverride: 'lid',
+                memberAddMode: false,
+                membershipApprovalMode: false,
+                announce: false,
+                restrict: false,
+                ephemeralDuration: 0,
+                title: title,
+              },
+              participantWids,
+            );
+            return createGroupResult.wid._serialized || createGroupResult.wid;
+          } catch (err2) {
+            throw new Error(`WAWebGroupCreateJob failed. Standard error: ${err.message}. LID error: ${err2.message}`);
+          }
+        }
+      }, name, participantIds);
+    } catch (evalError: any) {
+      throw new Error(`CreateGroupError: ${evalError.message || String(evalError)}`);
+    }
 
     if (!result) {
       throw new Error('Failed to create group: received empty response from WhatsApp client');
