@@ -94,9 +94,9 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
           if (parsedUrl.username && parsedUrl.password) {
             this.proxyUsername = decodeURIComponent(parsedUrl.username);
             this.proxyPassword = decodeURIComponent(parsedUrl.password);
-            proxyServerUrl = `${parsedUrl.hostname}:${parsedUrl.port}`;
+            proxyServerUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
           } else {
-            proxyServerUrl = `${parsedUrl.hostname}:${parsedUrl.port}`;
+            proxyServerUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
           }
         } catch (error) {
           // Fallback if URL parsing fails
@@ -105,7 +105,7 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
 
         puppeteerArgs.push(`--proxy-server=${proxyServerUrl}`);
         this.logger.log(
-          `Using proxy: ${this.config.proxy.type}://${proxyServerUrl}` + (this.proxyUsername ? ' with credentials' : ''),
+          `Using proxy: ${proxyServerUrl}` + (this.proxyUsername ? ' with credentials' : ''),
         );
       }
 
