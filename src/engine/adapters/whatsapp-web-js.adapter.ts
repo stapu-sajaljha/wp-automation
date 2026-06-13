@@ -91,17 +91,12 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
           // Check if urlStr is a complete URL (contains protocol)
           const parsedUrl = new URL(urlStr.includes('://') ? urlStr : `${this.config.proxy.type || 'http'}://${urlStr}`);
           
-          let host = parsedUrl.host;
-          if (parsedUrl.hostname === 'p.webshare.io') {
-            host = 'proxy.webshare.io' + (parsedUrl.port ? `:${parsedUrl.port}` : '');
-          }
-
           if (parsedUrl.username && parsedUrl.password) {
             this.proxyUsername = decodeURIComponent(parsedUrl.username);
             this.proxyPassword = decodeURIComponent(parsedUrl.password);
-            proxyServerUrl = `${parsedUrl.protocol}//${host}`;
+            proxyServerUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
           } else {
-            proxyServerUrl = `${parsedUrl.protocol}//${host}`;
+            proxyServerUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
           }
         } catch (error) {
           // Fallback if URL parsing fails
