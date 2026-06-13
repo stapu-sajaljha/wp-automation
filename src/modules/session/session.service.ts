@@ -102,11 +102,39 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
       throw new ConflictException(`Session with name '${dto.name}' already exists`);
     }
 
+    let proxyUrl = dto.proxyUrl || null;
+    let proxyType = dto.proxyType || null;
+
+    if (!proxyUrl) {
+      const proxyPoolStr = this.configService.get<string>('engine.proxyPool') || process.env.PROXY_POOL;
+      if (proxyPoolStr) {
+        const proxyPool = proxyPoolStr.split(',').map(p => p.trim()).filter(Boolean);
+        if (proxyPool.length > 0) {
+          const totalSessions = await this.sessionRepository.count();
+          const selectedProxy = proxyPool[totalSessions % proxyPool.length];
+          
+          // Clean/normalize selected proxy url to ensure it matches format expected by Puppeteer
+          proxyUrl = selectedProxy;
+
+          // Infer proxy type from prefix
+          if (proxyUrl.startsWith('socks5://')) {
+            proxyType = 'socks5';
+          } else if (proxyUrl.startsWith('socks4://')) {
+            proxyType = 'socks4';
+          } else if (proxyUrl.startsWith('https://')) {
+            proxyType = 'https';
+          } else {
+            proxyType = 'http';
+          }
+        }
+      }
+    }
+
     const session = this.sessionRepository.create({
       name: dto.name,
       config: dto.config || {},
-      proxyUrl: dto.proxyUrl || null,
-      proxyType: dto.proxyType || null,
+      proxyUrl,
+      proxyType,
       status: SessionStatus.CREATED,
     });
 
