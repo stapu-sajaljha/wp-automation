@@ -589,7 +589,11 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
   ): Promise<Group> {
     this.ensureReady();
     // Ensure participant IDs are in correct format
-    const participantIds = participants.map(p => (p.includes('@') ? p : `${p}@c.us`));
+    const participantIds = participants.map(p => {
+      if (p.includes('@')) return p;
+      const clean = p.replace(/[+\s\-()]/g, '');
+      return `${clean}@c.us`;
+    });
     const result = await this.client!.createGroup(name, participantIds);
 
     if (!result) {
