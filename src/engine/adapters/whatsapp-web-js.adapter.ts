@@ -603,6 +603,9 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
     let groupId: string | undefined = undefined;
 
     if (typeof result === 'string') {
+      if (result.startsWith('CreateGroupError:')) {
+        throw new Error(result);
+      }
       groupId = result;
     } else {
       const anyResult = result as any;
